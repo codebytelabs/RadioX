@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "RadioX - Global Internet Radio",
+  "version": "2.0.2",
+  "description": "40,000+ radio stations worldwide. Now Playing, EQ, sleep timer, queue, and background playback.",
+  "permissions": [
+    "offscreen",
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.radio-browser.info/*",
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "RadioX - Internet Radio"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "toggle-play": {
+      "suggested_key": {
+        "default": "MediaPlayPause",
+        "mac": "MediaPlayPause"
+      },
+      "description": "Play or pause radio"
+    },
+    "stop-playback": {
+      "suggested_key": {
+        "default": "MediaStop",
+        "mac": "MediaStop"
+      },
+      "description": "Stop playback"
+    },
+    "skip-next": {
+      "suggested_key": {
+        "default": "MediaNextTrack",
+        "mac": "MediaNextTrack"
+      },
+      "description": "Next station in queue"
+    },
+    "skip-prev": {
+      "suggested_key": {
+        "default": "MediaPrevTrack",
+        "mac": "MediaPrevTrack"
+      },
+      "description": "Previous station in queue"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html", "offscreen.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "minimum_chrome_version": "109"
+}
