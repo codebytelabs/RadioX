@@ -12,7 +12,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   eqPreset: 'flat',
   eqBands: [...EQ_PRESETS.flat],
   compactMode: false,
-  hideDonationBanner: false,
+  supporter: false,
+  searchProvider: 'youtube-music',
+  hideSupportTip: false,
 };
 
 export function useSettings() {

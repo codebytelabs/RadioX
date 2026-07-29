@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RadioX — Global Internet Radio for Chrome</title>
+  <meta name="description" content="Premium worldwide internet radio Chrome extension. Curated shelves, live charts, EQ, sleep timer, track log. Ad-free." />
+  <link rel="icon" href="/icon128.png" />
+  <style>
+    :root {
+      --bg: #070b0e;
+      --panel: #12181f;
+      --text: #e8f0f4;
+      --muted: #94a3b8;
+      --teal: #14b8a6;
+      --teal-soft: #99f6e4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(900px 500px at 80% -10%, #0f3d3a 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .brand img { width: 56px; height: 56px; border-radius: 14px; }
+    h1 { font-size: 2.4rem; margin: 0 0 12px; letter-spacing: -0.03em; }
+    .tag { color: var(--teal-soft); font-size: 1.1rem; margin: 0 0 28px; }
+    p { color: var(--muted); line-height: 1.6; }
+    .cta {
+      display: inline-flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 28px 0 40px;
+    }
+    a.btn {
+      display: inline-block;
+      padding: 12px 18px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a.primary { background: var(--teal); color: #042f2e; }
+    a.ghost { border: 1px solid #334155; color: var(--text); }
+    ul { color: var(--muted); line-height: 1.8; padding-left: 1.2rem; }
+    footer { margin-top: 48px; color: #64748b; font-size: 0.9rem; }
+    footer a { color: var(--teal-soft); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">
+      <img src="/icon128.png" alt="RadioX" />
+      <div>
+        <strong>RadioX</strong><br />
+        <span style="color:var(--muted);font-size:0.9rem">by Codebyte Labs</span>
+      </div>
+    </div>
+    <h1>Worldwide radio.<br />Zero ads.</h1>
+    <p class="tag">Premium internet radio for Chrome — curated shelves, live charts, EQ, sleep timer, and a now-playing track log.</p>
+    <div class="cta">
+      <a class="btn primary" id="store-link" href="https://chromewebstore.google.com/detail/radiox-global-internet-radio/hjdegkfegpcmoaneeoccncofofjegmpn">Chrome Web Store (pending review)</a>
+      <a class="btn ghost" href="https://buymeacoffee.com/codebytelabs">Support on Buy Me a Coffee</a>
+      <a class="btn ghost" href="https://ko-fi.com/codebytelabs">Support on Ko-fi</a>
+    </div>
+    <ul>
+      <li>Thousands of stations via Radio Browser</li>
+      <li>Background playback that keeps going while you browse</li>
+      <li>Favorites, recent, featured shelves, trending</li>
+      <li>Optional tip unlocks unlimited track log + CSV export</li>
+      <li>No ads. No analytics trackers.</li>
+    </ul>
+    <footer>
+      <a href="/privacy.html">Privacy Policy</a> ·
+      <a href="https://x.com/codebytelabs">@codebytelabs</a>
+    </footer>
+  </main>
+</body>
+</html>

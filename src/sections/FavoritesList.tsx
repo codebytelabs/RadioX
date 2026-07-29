@@ -1,5 +1,6 @@
 import type { RadioStation } from '@/types/station';
 import { StationList } from './StationList';
+import { EmptyState } from '@/components/EmptyState';
 import { Heart } from 'lucide-react';
 
 interface FavoritesListProps {
@@ -17,19 +18,15 @@ export function FavoritesList({
   isPlaying,
   isFavorite,
   onPlay,
-  onToggleFavorite
+  onToggleFavorite,
 }: FavoritesListProps) {
   if (favorites.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-          <Heart className="w-6 h-6 text-gray-600" />
-        </div>
-        <p className="text-sm text-gray-400 font-medium">No favorites yet</p>
-        <p className="text-xs text-gray-600 mt-1 max-w-[200px]">
-          Tap the heart icon on any station to add it to your favorites
-        </p>
-      </div>
+      <EmptyState
+        icon={Heart}
+        title="No favorites yet"
+        description="Tap the heart on any station to save it here"
+      />
     );
   }
 
@@ -42,7 +39,6 @@ export function FavoritesList({
       onPlay={onPlay}
       onToggleFavorite={onToggleFavorite}
       isLoading={false}
-      emptyMessage="No favorites yet"
     />
   );
 }

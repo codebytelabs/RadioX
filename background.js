@@ -11,7 +11,28 @@ function normalizeVolume(vol) {
   return Math.min(1, Math.max(0, n));
 }
 
-const OFFSCREEN_BUILD = '2.0.2';
+/** Mirror of trackLog.sanitizeTrackTitle — keep iHeart soup out of the player. */
+function sanitizeTrackTitle(raw) {
+  if (!raw) return null;
+  let t = String(raw).trim();
+  if (!t) return null;
+  const attr =
+    t.match(/\btext="([^"]{2,140})"/i) ||
+    t.match(/\btitle="([^"]{2,140})"/i) ||
+    t.match(/\bsong_title="([^"]{2,140})"/i);
+  if (attr) t = attr[1].trim();
+  t = t.split(/\s+(?:amgArtworkURL|song_spot|ads_url|itunes|artworkURL|length=)/i)[0].trim();
+  t = t.replace(/^[\s\-–—_|"':]+|[\s\-–—_|"':]+$/g, '').trim();
+  if (!t || t.length < 2 || t.length > 160) return null;
+  if (/amgArtworkURL|song_spot|catalog\/track|ops=fit\(|i\.iheart\./i.test(t)) return null;
+  if (/^https?:\/\//i.test(t) || /^\/\d+\//.test(t)) return null;
+  if (/[=<>{}]/.test(t) && !/\s-\s/.test(t)) return null;
+  if (/^[\d\s"':._\-]+$/.test(t)) return null;
+  if (/^(live|on air|now playing|unknown|n\/?a|null)$/i.test(t)) return null;
+  return t;
+}
+
+const OFFSCREEN_BUILD = '2.2.0';
 
 async function restorePlayerState() {
   const result = await chrome.storage.local.get([
@@ -19,7 +40,7 @@ async function restorePlayerState() {
   ]);
   currentStation = result.currentStation || null;
   isPlaying = Boolean(result.isPlaying && currentStation);
-  nowPlayingTrack = result.nowPlayingTrack || null;
+  nowPlayingTrack = sanitizeTrackTitle(result.nowPlayingTrack) || null;
   if (result.volume !== undefined) volume = normalizeVolume(result.volume);
   if (isPlaying && currentStation) {
     chrome.action.setBadgeText({ text: '▶' });
@@ -135,8 +156,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           message: message.message,
         }).catch(() => {});
       } else if (message.type === 'NOW_PLAYING') {
-        nowPlayingTrack = message.track || null;
+        const next = sanitizeTrackTitle(message.track);
+        // Ignore empty/junk updates so a bad poll doesn't wipe the shown title
+        if (!next || next === nowPlayingTrack) return;
+        nowPlayingTrack = next;
         await persistPlayerState();
+        if (currentStation) {
+          await appendTrackLog(nowPlayingTrack, currentStation);
+        }
         chrome.runtime.sendMessage({
           type: 'NOW_PLAYING_UPDATE',
           track: nowPlayingTrack,
@@ -229,6 +256,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         case 'GET_RECENT':
           sendResponse(await getRecent());
           break;
+        case 'GET_TRACK_LOG':
+          sendResponse(await getTrackLogEntries());
+          break;
+        case 'TOGGLE_SAVED_TRACK':
+          sendResponse({ entries: await toggleSavedTrack(message.id) });
+          break;
+        case 'CLEAR_TRACK_LOG':
+          await chrome.storage.local.set({ trackLog: [] });
+          sendResponse({ success: true });
+          break;
         case 'GET_STORAGE':
           sendResponse(await chrome.storage.local.get(message.key));
           break;
@@ -236,6 +273,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           await chrome.storage.local.set({ [message.key]: message.data });
           sendResponse({ success: true });
           break;
+        case 'OPEN_EXTERNAL': {
+          const url = typeof message.url === 'string' ? message.url.trim() : '';
+          if (!/^https?:\/\//i.test(url)) {
+            sendResponse({ success: false, error: 'invalid url' });
+            break;
+          }
+          await chrome.tabs.create({ url, active: true });
+          sendResponse({ success: true });
+          break;
+        }
         default:
           sendResponse({ success: false });
       }
@@ -264,6 +311,7 @@ async function handlePlay(station) {
     type: 'PLAY',
     data: {
       url: station.url_resolved || station.url,
+      urls: station.urls || [],
       volume: normalizeVolume(volume),
       station,
       eqEnabled: settings.eqEnabled !== false,
@@ -292,8 +340,8 @@ async function handlePlay(station) {
 
 async function handleStop() {
   isPlaying = false;
-  currentStation = null;
   nowPlayingTrack = null;
+  // Keep currentStation + queue so popup can resume / skip
   await persistPlayerState();
   try {
     await sendToOffscreen({ target: 'offscreen', type: 'STOP' });
@@ -405,8 +453,62 @@ async function getRecent() {
   return recentStations || [];
 }
 
+const TRACK_LOG_CAP = 200;
+const TRACK_DUP_MS = 60_000;
+
+function shouldSkipTrack(title, stationName) {
+  const t = String(title || '').trim();
+  if (!t || t.length < 3) return true;
+  if (/^(live|on air|now playing|unknown|n\/a|null)$/i.test(t)) return true;
+  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const nt = norm(t);
+  const ns = norm(stationName || '');
+  if (!nt) return true;
+  if (nt === ns) return true;
+  if (ns && (nt.includes(ns) || ns.includes(nt)) && Math.abs(nt.length - ns.length) < 8) return true;
+  return false;
+}
+
+async function appendTrackLog(title, station) {
+  if (shouldSkipTrack(title, station?.name)) return;
+  const { trackLog = [] } = await chrome.storage.local.get('trackLog');
+  const now = Date.now();
+  const last = trackLog[0];
+  if (
+    last &&
+    last.title === title.trim() &&
+    last.stationUuid === station.stationuuid &&
+    now - last.ts < TRACK_DUP_MS
+  ) {
+    return;
+  }
+  const entry = {
+    id: `${station.stationuuid}:${now}:${title.trim().slice(0, 40)}`,
+    title: title.trim(),
+    stationName: station.name,
+    stationUuid: station.stationuuid,
+    favicon: station.favicon || '',
+    homepage: station.homepage || '',
+    ts: now,
+    saved: false,
+  };
+  await chrome.storage.local.set({ trackLog: [entry, ...trackLog].slice(0, TRACK_LOG_CAP) });
+}
+
+async function getTrackLogEntries() {
+  const { trackLog } = await chrome.storage.local.get('trackLog');
+  return Array.isArray(trackLog) ? trackLog : [];
+}
+
+async function toggleSavedTrack(id) {
+  const log = await getTrackLogEntries();
+  const next = log.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e));
+  await chrome.storage.local.set({ trackLog: next });
+  return next;
+}
+
 async function incrementStationClicks(stationUuid) {
-  if (!stationUuid || stationUuid.startsWith('custom-')) return;
+  if (!stationUuid || stationUuid.startsWith('custom-') || stationUuid.startsWith('iprd-') || stationUuid.startsWith('irs-')) return;
   try {
     await fetch(`https://de1.api.radio-browser.info/json/url/${stationUuid}`, { cache: 'no-cache' });
   } catch {

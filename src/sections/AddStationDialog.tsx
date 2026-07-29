@@ -54,7 +54,7 @@ export function AddStationDialog({ onAdd, trigger }: AddStationDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-[#12121a] border-white/10 text-white sm:max-w-sm">
+      <DialogContent className="border-[var(--rx-border)] text-[var(--rx-text)] sm:max-w-sm" style={{ background: 'var(--rx-bg-soft)' }}>
         <DialogHeader>
           <DialogTitle className="text-sm">Add Custom Station</DialogTitle>
           <DialogDescription className="text-xs text-gray-400">
@@ -66,16 +66,16 @@ export function AddStationDialog({ onAdd, trigger }: AddStationDialogProps) {
             placeholder="Station name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="bg-white/5 border-white/10 text-white text-xs"
+            className="rx-input border-0 shadow-none focus-visible:ring-0"
           />
           <Input
             placeholder="Stream URL (https://...)"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="bg-white/5 border-white/10 text-white text-xs"
+            className="rx-input border-0 shadow-none focus-visible:ring-0"
           />
           {error && <p className="text-[10px] text-red-400">{error}</p>}
-          <Button onClick={handleSubmit} className="w-full bg-emerald-500 hover:bg-emerald-400 text-black text-xs">
+          <Button onClick={handleSubmit} className="w-full text-xs font-semibold" style={{ background: 'var(--rx-accent)', color: 'var(--rx-bg)' }}>
             Save & Play
           </Button>
         </div>

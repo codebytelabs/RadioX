@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RadioX - Global Internet Radio",
-  "version": "2.0.2",
-  "description": "40,000+ radio stations worldwide. Now Playing, EQ, sleep timer, queue, and background playback.",
+  "version": "2.6.0",
+  "description": "Premium worldwide internet radio — curated collections, live charts, EQ, sleep timer, and now-playing track log. Ad-free.",
   "permissions": [
     "offscreen",
     "storage",
@@ -64,11 +64,5 @@
       "description": "Previous station in queue"
     }
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["offscreen.html", "offscreen.js"],
-      "matches": ["<all_urls>"]
-    }
-  ],
   "minimum_chrome_version": "109"
 }

@@ -1,7 +1,9 @@
-import type { RadioStation } from '@/types/station';
-import { Play, Pause, Heart, Radio } from 'lucide-react';
+import { StationArt } from '@/components/StationArt';
+import { EmptyState } from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getSafeFaviconUrl } from '@/lib/stationImages';
+import type { RadioStation } from '@/types/station';
+import { formatCountryName } from '@/lib/radioApi';
+import { Play, Pause, Heart, Radio } from 'lucide-react';
 
 interface StationListProps {
   stations: RadioStation[];
@@ -12,7 +14,7 @@ interface StationListProps {
   onToggleFavorite: (station: RadioStation) => void;
   isLoading: boolean;
   emptyMessage?: string;
-  showVotes?: boolean;
+  showRank?: boolean;
 }
 
 export function StationList({
@@ -24,17 +26,17 @@ export function StationList({
   onToggleFavorite,
   isLoading,
   emptyMessage = 'No stations found',
-  showVotes = false
+  showRank = false,
 }: StationListProps) {
   if (isLoading) {
     return (
-      <div className="space-y-2 pb-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 p-2 rounded-lg">
-            <Skeleton className="w-10 h-10 rounded-lg bg-white/5" />
-            <div className="flex-1 space-y-1.5">
-              <Skeleton className="h-3.5 w-32 bg-white/5" />
-              <Skeleton className="h-2.5 w-20 bg-white/5" />
+      <div className="space-y-0 pb-3">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 py-2.5">
+            <Skeleton className="w-11 h-11 rounded-xl rx-skeleton" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-32 rounded rx-skeleton" />
+              <Skeleton className="h-2 w-20 rounded rx-skeleton" />
             </div>
           </div>
         ))}
@@ -43,124 +45,68 @@ export function StationList({
   }
 
   if (stations.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Radio className="w-10 h-10 text-gray-700 mb-3" />
-        <p className="text-sm text-gray-500">{emptyMessage}</p>
-        <p className="text-xs text-gray-600 mt-1">Try a different search term</p>
-      </div>
-    );
+    return <EmptyState icon={Radio} title={emptyMessage} />;
   }
 
   return (
-    <div className="space-y-1 pb-4">
-      {stations.map((station) => {
-        const isCurrentStation = currentStation?.stationuuid === station.stationuuid;
-        const isCurrentlyPlaying = isCurrentStation && isPlaying;
+    <div className="pb-2 divide-y divide-[var(--rx-border-subtle)]">
+      {stations.map((station, index) => {
+        const isCurrent = currentStation?.stationuuid === station.stationuuid;
+        const playing = isCurrent && isPlaying;
         const favorited = isFavorite(station.stationuuid);
-        const bitrate = station.bitrate > 0 ? `${station.bitrate}kbps` : '';
-        const favicon = getSafeFaviconUrl(station);
-        const tags = station.tags
-          ? station.tags
-              .split(',')
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((t) => t.trim())
-          : [];
+        const rank = index + 1;
 
         return (
           <div
             key={station.stationuuid}
-            className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 cursor-pointer ${
-              isCurrentStation
-                ? 'bg-emerald-500/10 border border-emerald-500/20'
-                : 'hover:bg-white/5 border border-transparent'
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') onPlay(station); }}
+            onClick={() => onPlay(station)}
+            className={`group flex items-center gap-2.5 py-2.5 transition-colors duration-150 cursor-pointer ${
+              isCurrent ? 'rx-row-active' : 'hover:bg-[var(--rx-surface-hover)]'
             }`}
           >
-            {/* Station Logo */}
-            <div
-              className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center"
-              onClick={() => onPlay(station)}
-            >
-              {favicon ? (
-                <img
-                  src={favicon}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <Radio className="w-5 h-5 text-gray-600" />
-              )}
-              {/* Play overlay */}
-              <div className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
-                isCurrentStation ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}>
-                {isCurrentlyPlaying ? (
-                  <Pause className="w-5 h-5 text-white" />
-                ) : (
-                  <Play className="w-5 h-5 text-white ml-0.5" />
-                )}
-              </div>
-            </div>
-
-            {/* Station Info */}
-            <div
-              className="flex-1 min-w-0"
-              onClick={() => onPlay(station)}
-            >
-              <h3 className={`text-sm font-medium truncate ${
-                isCurrentStation ? 'text-emerald-400' : 'text-white'
-              }`}>
-                {station.name}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] text-gray-500">
-                  {station.country || 'Unknown'}
+            <div className="w-5 flex-shrink-0 flex justify-center">
+              {showRank ? (
+                <span className={`text-[11px] font-semibold tabular-nums ${
+                  rank <= 3 ? 'text-[var(--rx-accent)]' : 'text-[var(--rx-text-faint)]'
+                }`}>
+                  {rank}
                 </span>
-                {bitrate && (
-                  <>
-                    <span className="text-[10px] text-gray-700">·</span>
-                    <span className="text-[10px] text-emerald-500/70 font-medium">
-                      {bitrate}
-                    </span>
-                  </>
-                )}
-                {showVotes && station.votes > 0 && (
-                  <>
-                    <span className="text-[10px] text-gray-700">·</span>
-                    <span className="text-[10px] text-amber-500/70 font-medium">
-                      ★ {station.votes.toLocaleString()}
-                    </span>
-                  </>
-                )}
-                {tags.length > 0 && (
-                  <>
-                    <span className="text-[10px] text-gray-700">·</span>
-                    <span className="text-[10px] text-gray-500 truncate max-w-[80px]">
-                      {tags.join(', ')}
-                    </span>
-                  </>
-                )}
+              ) : isCurrent ? (
+                <span className={`w-1.5 h-1.5 rounded-full ${playing ? 'bg-[var(--rx-accent)] animate-live-pulse' : 'bg-[var(--rx-text-faint)]'}`} />
+              ) : null}
+            </div>
+
+            <div className="relative flex-shrink-0">
+              <StationArt name={station.name} station={station} size="sm" rounded="xl" playing={playing} />
+              <div className={`absolute inset-0 rounded-xl flex items-center justify-center bg-black/50 transition-opacity ${playing || isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                {playing ? <Pause className="w-3.5 h-3.5 text-white" fill="white" /> : <Play className="w-3.5 h-3.5 text-white ml-0.5" fill="white" />}
               </div>
             </div>
 
-            {/* Favorite Button */}
+            <div className="flex-1 min-w-0 pr-1">
+              <p className={`text-[13px] font-medium truncate leading-snug ${isCurrent ? 'text-[var(--rx-accent)]' : 'text-[var(--rx-text)]'}`}>
+                {station.name}
+              </p>
+              <p className="text-[10px] text-[var(--rx-text-faint)] truncate mt-0.5">
+                {formatCountryName(station.country || 'Unknown')}
+                {station.bitrate > 0 && ` · ${station.bitrate}k`}
+              </p>
+            </div>
+
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(station);
-              }}
-              className={`p-1.5 rounded-lg transition-all duration-200 ${
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(station); }}
+              aria-label={favorited ? 'Unfavorite' : 'Favorite'}
+              className={`p-1.5 rounded-lg transition-all w-8 h-8 flex items-center justify-center ${
                 favorited
-                  ? 'text-red-400 hover:text-red-300'
-                  : 'text-gray-600 opacity-0 group-hover:opacity-100 hover:text-gray-400'
+                  ? 'text-[var(--rx-favorite)] opacity-100'
+                  : 'text-[var(--rx-text-faint)] opacity-40 group-hover:opacity-100'
               }`}
             >
-              <Heart className={`w-4 h-4 ${favorited ? 'fill-current' : ''}`} />
+              <Heart className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`} />
             </button>
           </div>
         );

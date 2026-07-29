@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { StationArt } from '@/components/StationArt';
+import { normalizeVolume } from '@/lib/utils';
+import { MarqueeText } from '@/components/MarqueeText';
+import { formatCountryName } from '@/lib/radioApi';
+import { openExternal } from '@/lib/openExternal';
+import { findSongUrl, type SearchProvider } from '@/lib/trackLog';
+import {
+  Play, Pause, Square, Heart, Volume2, VolumeX,
+  SkipBack, SkipForward, ExternalLink,
+} from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import type { RadioStation } from '@/types/station';
-import {
-  Play, Pause, Square, Heart, Volume2, VolumeX, Radio,
-  SkipBack, SkipForward, ThumbsUp, Music2
-} from 'lucide-react';
-import { getSafeFaviconUrl } from '@/lib/stationImages';
-import { normalizeVolume } from '@/lib/utils';
-import { voteForStation } from '@/lib/radioApi';
 
 interface PlayerBarProps {
   station: RadioStation;
@@ -16,6 +18,7 @@ interface PlayerBarProps {
   isLoading: boolean;
   isFavorite: boolean;
   nowPlayingTrack?: string | null;
+  searchProvider?: SearchProvider;
   queueLength?: number;
   queueIndex?: number;
   compact?: boolean;
@@ -25,6 +28,7 @@ interface PlayerBarProps {
   onToggleFavorite: () => void;
   onSkipNext?: () => void;
   onSkipPrev?: () => void;
+  onTrackClick?: () => void;
 }
 
 export function PlayerBar({
@@ -34,6 +38,7 @@ export function PlayerBar({
   isLoading,
   isFavorite,
   nowPlayingTrack,
+  searchProvider = 'youtube-music',
   queueLength = 0,
   queueIndex = 0,
   compact = false,
@@ -43,115 +48,165 @@ export function PlayerBar({
   onToggleFavorite,
   onSkipNext,
   onSkipPrev,
+  onTrackClick,
 }: PlayerBarProps) {
-  const [voted, setVoted] = useState(false);
-  const favicon = getSafeFaviconUrl(station);
   const hasQueue = queueLength > 1;
+  const canPrev = hasQueue && queueIndex > 0;
+  const canNext = hasQueue && queueIndex < queueLength - 1;
+  const findUrl = nowPlayingTrack ? findSongUrl(nowPlayingTrack, searchProvider) : null;
 
-  const handleVote = async () => {
-    const ok = await voteForStation(station.stationuuid);
-    if (ok) setVoted(true);
-  };
+  const findSongBtn = findUrl ? (
+    <button
+      type="button"
+      onClick={() => openExternal(findUrl)}
+      className="rx-transport-btn"
+      aria-label="Find song"
+      title="Find song"
+    >
+      <ExternalLink className="w-3.5 h-3.5" />
+    </button>
+  ) : null;
 
-  return (
-    <div className="border-t border-white/10 bg-[#0f0f18]/95 backdrop-blur-xl">
-      {/* Now Playing track */}
-      {nowPlayingTrack && (
-        <div className="flex items-center gap-1.5 px-3 pt-2 pb-0.5">
-          <Music2 className="w-3 h-3 text-emerald-400 flex-shrink-0 animate-pulse" />
-          <p className="text-[10px] text-emerald-400/90 truncate font-medium">{nowPlayingTrack}</p>
-        </div>
-      )}
-
-      <div className={`flex items-center gap-2.5 px-3 ${compact ? 'py-1.5' : 'py-2.5'}`}>
-        <div className={`relative rounded-lg overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center ${compact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-          {favicon ? (
-            <img src={favicon} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          ) : (
-            <Radio className="w-5 h-5 text-gray-600" />
-          )}
-          {isPlaying && (
-            <div className="absolute inset-0 flex items-end justify-center gap-0.5 pb-1 bg-black/20">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="w-0.5 bg-emerald-400 rounded-full animate-pulse"
-                  style={{ height: `${4 + i * 2}px`, animationDelay: `${i * 0.1}s` }} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h4 className="text-xs font-semibold text-white truncate">{station.name}</h4>
-          <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-[10px] text-gray-500">{station.country || 'Unknown'}</span>
-            {station.bitrate > 0 && (
-              <>
-                <span className="text-[10px] text-gray-700">·</span>
-                <span className="text-[10px] text-gray-600">{station.bitrate}kbps</span>
-              </>
-            )}
-            {hasQueue && (
-              <>
-                <span className="text-[10px] text-gray-700">·</span>
-                <span className="text-[10px] text-gray-600">{queueIndex + 1}/{queueLength}</span>
-              </>
+  if (compact) {
+    return (
+      <div className="rx-player-dock flex-shrink-0 px-3 py-2">
+        <div className="flex items-center gap-2.5">
+          <StationArt name={station.name} station={station} size="sm" rounded="lg" playing={isPlaying} />
+          <div className="flex-1 min-w-0">
+            {nowPlayingTrack ? (
+              <MarqueeText text={nowPlayingTrack} className="text-[11px]" onClick={onTrackClick} />
+            ) : (
+              <p className="text-[12px] font-medium text-[var(--rx-text)] truncate">{station.name}</p>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center gap-0.5">
-          {!station.stationuuid.startsWith('custom-') && (
-            <button onClick={handleVote} disabled={voted}
-              className={`p-1.5 rounded-lg transition-colors ${voted ? 'text-emerald-400' : 'text-gray-600 hover:text-gray-400'}`}
-              title="Vote for this station">
-              <ThumbsUp className={`w-3.5 h-3.5 ${voted ? 'fill-current' : ''}`} />
-            </button>
+          {isPlaying && (
+            <span className="text-[8px] font-semibold tracking-wider text-[var(--rx-accent)] px-1.5 py-0.5 rounded bg-[var(--rx-accent-soft)]">
+              LIVE
+            </span>
           )}
-          <button onClick={onToggleFavorite}
-            className={`p-1.5 rounded-lg transition-colors ${isFavorite ? 'text-red-400' : 'text-gray-600 hover:text-gray-400'}`}>
-            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+          <button
+            type="button"
+            onClick={onSkipPrev}
+            disabled={!canPrev}
+            className="rx-transport-btn p-1.5 disabled:opacity-25"
+            aria-label="Previous"
+          >
+            <SkipBack className="w-3.5 h-3.5" />
           </button>
-          {hasQueue && onSkipPrev && (
-            <button onClick={onSkipPrev} className="p-1 rounded-lg text-gray-500 hover:text-gray-300">
-              <SkipBack className="w-3.5 h-3.5" />
-            </button>
-          )}
-          <button onClick={onTogglePlay} disabled={isLoading}
-            className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center transition-colors disabled:opacity-50">
+          <button type="button" onClick={onTogglePlay} disabled={isLoading} className="rx-play-btn !w-9 !h-9" data-playing={isPlaying} aria-label={isPlaying ? 'Pause' : 'Play'}>
             {isLoading ? (
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-[var(--rx-bg)] border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause className="w-3.5 h-3.5 text-white" />
+              <Pause className="w-4 h-4" fill="currentColor" />
             ) : (
-              <Play className="w-3.5 h-3.5 text-white ml-0.5" />
+              <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
             )}
           </button>
-          {hasQueue && onSkipNext && (
-            <button onClick={onSkipNext} className="p-1 rounded-lg text-gray-500 hover:text-gray-300">
-              <SkipForward className="w-3.5 h-3.5" />
-            </button>
-          )}
-          <button onClick={onStop} className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5">
-            <Square className="w-3.5 h-3.5" />
+          <button
+            type="button"
+            onClick={onSkipNext}
+            disabled={!canNext}
+            className="rx-transport-btn p-1.5 disabled:opacity-25"
+            aria-label="Next"
+          >
+            <SkipForward className="w-3.5 h-3.5" />
           </button>
+          <button type="button" onClick={onToggleFavorite} className="rx-transport-btn p-1.5" aria-label="Favorite">
+            <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-[var(--rx-favorite)] text-[var(--rx-favorite)]' : ''}`} />
+          </button>
+          {findSongBtn}
         </div>
       </div>
+    );
+  }
 
-      {!compact && (
-        <div className="flex items-center gap-2 px-3 pb-2">
-          {volume === 0 ? <VolumeX className="w-3.5 h-3.5 text-gray-500" /> : <Volume2 className="w-3.5 h-3.5 text-gray-500" />}
-          <Slider
-            value={[Math.round(normalizeVolume(volume) * 100)]}
-            onValueChange={(value) => {
-              const next = value[0] ?? 80;
-              onVolumeChange(Math.min(1, Math.max(0, next / 100)));
-            }}
-            max={100} step={1} className="flex-1 h-1"
-          />
-          <span className="text-[10px] text-gray-600 w-7 text-right">{Math.round(volume * 100)}%</span>
+  const subtitle = nowPlayingTrack
+    ? station.name
+    : [
+        formatCountryName(station.country || ''),
+        station.bitrate > 0 ? `${station.bitrate}k` : null,
+        hasQueue ? `${queueIndex + 1}/${queueLength}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+
+  return (
+    <div className="rx-player-dock flex-shrink-0">
+      <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+        <StationArt name={station.name} station={station} size="md" rounded="xl" playing={isPlaying} />
+
+        <div className="flex-1 min-w-0">
+          {nowPlayingTrack ? (
+            <>
+              <MarqueeText text={nowPlayingTrack} onClick={onTrackClick} />
+              <p className="text-[10px] text-[var(--rx-text-muted)] truncate mt-0.5">{subtitle}</p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className="text-[13px] font-semibold text-[var(--rx-text)] truncate leading-tight">{station.name}</p>
+                {isPlaying && (
+                  <span className="flex-shrink-0 text-[8px] font-semibold tracking-wider text-[var(--rx-accent)] px-1.5 py-0.5 rounded bg-[var(--rx-accent-soft)]">
+                    LIVE
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-[var(--rx-text-faint)] truncate mt-0.5">{subtitle}</p>
+            </>
+          )}
         </div>
-      )}
+
+        <button type="button" onClick={onTogglePlay} disabled={isLoading} className="rx-play-btn flex-shrink-0 disabled:opacity-50" data-playing={isPlaying} aria-label={isPlaying ? 'Pause' : 'Play'}>
+          {isLoading ? (
+            <div className="w-4 h-4 border-2 border-[var(--rx-bg)] border-t-transparent rounded-full animate-spin" />
+          ) : isPlaying ? (
+            <Pause className="w-[18px] h-[18px]" fill="currentColor" />
+          ) : (
+            <Play className="w-[18px] h-[18px] ml-0.5" fill="currentColor" />
+          )}
+        </button>
+      </div>
+
+      <div className="flex items-center gap-0.5 px-3 pb-3">
+        <button type="button" onClick={() => onVolumeChange(volume === 0 ? 0.8 : 0)} className="rx-transport-btn" aria-label={volume === 0 ? 'Unmute' : 'Mute'}>
+          {volume === 0 ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+        </button>
+        <Slider
+          value={[Math.round(normalizeVolume(volume) * 100)]}
+          onValueChange={(value) => {
+            const next = value[0] ?? 80;
+            onVolumeChange(Math.min(1, Math.max(0, next / 100)));
+          }}
+          max={100}
+          step={1}
+          className="flex-1 h-1 mx-1"
+        />
+        <button
+          type="button"
+          onClick={onSkipPrev}
+          disabled={!canPrev}
+          className="rx-transport-btn disabled:opacity-25"
+          aria-label="Previous"
+        >
+          <SkipBack className="w-4 h-4" />
+        </button>
+        <button type="button" onClick={onToggleFavorite} className="rx-transport-btn" aria-label="Favorite">
+          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-[var(--rx-favorite)] text-[var(--rx-favorite)]' : ''}`} />
+        </button>
+        {findSongBtn}
+        <button
+          type="button"
+          onClick={onSkipNext}
+          disabled={!canNext}
+          className="rx-transport-btn disabled:opacity-25"
+          aria-label="Next"
+        >
+          <SkipForward className="w-4 h-4" />
+        </button>
+        <button type="button" onClick={onStop} className="rx-transport-btn" aria-label="Stop">
+          <Square className="w-3.5 h-3.5" fill="currentColor" />
+        </button>
+      </div>
     </div>
   );
 }

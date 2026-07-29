@@ -13,16 +13,29 @@ export function usePlayer() {
   const [queueIndex, setQueueIndex] = useState(0);
   const initRef = useRef(false);
   const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearPlayTimeout = useCallback(() => {
     if (playTimeoutRef.current) {
       clearTimeout(playTimeoutRef.current);
       playTimeoutRef.current = null;
     }
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+      hintTimeoutRef.current = null;
+    }
   }, []);
 
   const startPlayTimeout = useCallback(() => {
     clearPlayTimeout();
+    // Soft hint at 8s
+    hintTimeoutRef.current = setTimeout(() => {
+      setIsLoading((loading) => {
+        if (loading) setError('Still connecting…');
+        return loading;
+      });
+    }, 8000);
+    // Hard error at 15s
     playTimeoutRef.current = setTimeout(() => {
       setIsLoading((loading) => {
         if (loading) {
@@ -31,7 +44,7 @@ export function usePlayer() {
         }
         return loading;
       });
-    }, 25000);
+    }, 15000);
   }, [clearPlayTimeout]);
 
   useEffect(() => {
@@ -48,9 +61,9 @@ export function usePlayer() {
           setCurrentStation(stored.currentStation as RadioStation);
           setIsPlaying(Boolean(stored.isPlaying));
           setVolumeState(normalizeVolume(stored.volume));
-          setNowPlayingTrack(stored.nowPlayingTrack || null);
-          setQueueLength((stored.queue as RadioStation[])?.length || 0);
-          setQueueIndex(stored.queueIndex ?? 0);
+          setNowPlayingTrack(typeof stored.nowPlayingTrack === 'string' ? stored.nowPlayingTrack : null);
+          setQueueLength(Array.isArray(stored.queue) ? stored.queue.length : 0);
+          setQueueIndex(typeof stored.queueIndex === 'number' ? stored.queueIndex : 0);
           return;
         }
 
@@ -114,10 +127,19 @@ export function usePlayer() {
       }
     };
 
+    const onStorage = (changes: Record<string, chrome.storage.StorageChange>) => {
+      if (changes.nowPlayingTrack) {
+        const v = changes.nowPlayingTrack.newValue;
+        setNowPlayingTrack(typeof v === 'string' && v ? v : null);
+      }
+    };
+
     if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
       chrome.runtime.onMessage.addListener(listener);
+      chrome.storage?.onChanged?.addListener(onStorage);
       return () => {
         chrome.runtime.onMessage.removeListener(listener);
+        chrome.storage?.onChanged?.removeListener(onStorage);
         clearPlayTimeout();
       };
     }
@@ -161,16 +183,17 @@ export function usePlayer() {
   const stop = useCallback(async () => {
     if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) return;
     try {
+      clearPlayTimeout();
       await chrome.runtime.sendMessage({ type: 'STOP' });
       setIsPlaying(false);
-      setCurrentStation(null);
+      setIsLoading(false);
       setNowPlayingTrack(null);
-      setQueueLength(0);
-      setQueueIndex(0);
+      setError(null);
+      // Keep currentStation + queue so user can resume / skip
     } catch (err) {
       console.error('Stop error:', err);
     }
-  }, []);
+  }, [clearPlayTimeout]);
 
   const togglePlay = useCallback(async () => {
     if (!currentStation) return;

@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ['./popup.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -37,6 +37,14 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        rx: {
+          bg: "var(--rx-bg)",
+          surface: "var(--rx-surface)",
+          accent: "var(--rx-accent)",
+          live: "var(--rx-live)",
+          muted: "var(--rx-text-muted)",
+          favorite: "var(--rx-favorite)",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

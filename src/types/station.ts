@@ -5,6 +5,8 @@ export interface RadioStation {
   name: string;
   url: string;
   url_resolved: string;
+  /** Alternate stream URLs (MP3 preferred) for format failover */
+  urls?: string[];
   homepage: string;
   favicon: string;
   tags: string;
@@ -73,5 +75,10 @@ export interface AppSettings {
   eqPreset: string;
   eqBands: number[];
   compactMode: boolean;
-  hideDonationBanner: boolean;
+  /** Honor-system supporter unlock (unlimited track log + CSV). */
+  supporter?: boolean;
+  /** Find-song deep link provider. */
+  searchProvider?: 'youtube-music' | 'spotify' | 'apple' | 'soundcloud';
+  /** Tip row dismissed forever. */
+  hideSupportTip?: boolean;
 }

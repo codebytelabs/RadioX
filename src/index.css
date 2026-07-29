@@ -1,94 +1,296 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 6%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 160 84% 39%;
+    /* Cool charcoal theater — content carries color, UI stays quiet */
+    --rx-bg: #0a0a0b;
+    --rx-bg-soft: #0e0e10;
+    --rx-surface: #161618;
+    --rx-surface-hover: #1e1e22;
+    --rx-surface-raised: #1a1a1e;
+    --rx-border: rgba(255, 255, 255, 0.07);
+    --rx-border-subtle: rgba(255, 255, 255, 0.04);
+    --rx-text: #f4f4f5;
+    --rx-text-muted: #a1a1aa;
+    --rx-text-faint: #71717a;
+    --rx-accent: #2dd4bf;
+    --rx-accent-hover: #5eead4;
+    --rx-accent-soft: rgba(45, 212, 191, 0.12);
+    --rx-accent-glow: rgba(45, 212, 191, 0.35);
+    --rx-live: #4ade80;
+    --rx-favorite: #fb7185;
+
+    --background: 240 6% 4%;
+    --foreground: 240 5% 96%;
+    --border: 240 4% 16%;
+    --ring: 172 66% 50%;
     --radius: 0.75rem;
   }
 
-  * {
-    @apply border-border;
-  }
-
   body {
-    @apply bg-background text-foreground antialiased;
+    font-family: 'Outfit', system-ui, sans-serif;
     width: 400px;
     min-height: 580px;
     max-height: 600px;
     overflow: hidden;
+    background: var(--rx-bg);
+    color: var(--rx-text);
+    @apply antialiased;
   }
 }
 
-/* Custom scrollbar */
+@layer utilities {
+  .font-display {
+    font-family: 'Outfit', system-ui, sans-serif;
+    letter-spacing: -0.03em;
+  }
+
+  .rx-app {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .rx-app::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .rx-app > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .rx-ambient {
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -8%, rgba(45, 212, 191, 0.07), transparent 55%),
+      var(--rx-bg);
+  }
+
+  .rx-ambient-live {
+    background:
+      radial-gradient(ellipse 70% 35% at 50% 100%, rgba(45, 212, 191, 0.06), transparent 50%),
+      radial-gradient(ellipse 60% 30% at 50% 0%, rgba(45, 212, 191, 0.09), transparent 50%),
+      var(--rx-bg);
+  }
+
+  .rx-hero-card {
+    background: linear-gradient(135deg, #1a1a1e 0%, #121214 55%, #0f1f1c 100%);
+    border: 1px solid var(--rx-border);
+  }
+
+  .rx-tabs {
+    @apply flex gap-0 border-b mx-4;
+    border-color: var(--rx-border);
+  }
+
+  .rx-tab {
+    @apply flex-1 flex items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors relative;
+    color: var(--rx-text-faint);
+  }
+
+  .rx-tab:hover {
+    color: var(--rx-text-muted);
+  }
+
+  .rx-tab[data-active='true'] {
+    color: var(--rx-text);
+  }
+
+  .rx-tab[data-active='true']::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 22%;
+    right: 22%;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--rx-accent);
+  }
+
+  .rx-chips {
+    @apply flex gap-1 px-4 pb-2;
+  }
+
+  .rx-chip {
+    @apply px-2.5 py-1 rounded-full text-[10px] font-medium transition-all duration-150;
+    color: var(--rx-text-faint);
+    background: transparent;
+  }
+
+  .rx-chip:hover {
+    color: var(--rx-text-muted);
+    background: var(--rx-surface);
+  }
+
+  .rx-chip[data-active='true'] {
+    color: var(--rx-accent);
+    background: var(--rx-accent-soft);
+  }
+
+  .rx-input {
+    @apply h-8 text-xs rounded-full transition-all duration-150;
+    background: var(--rx-surface);
+    border: 1px solid var(--rx-border);
+    color: var(--rx-text);
+  }
+
+  .rx-input::placeholder {
+    color: var(--rx-text-faint);
+  }
+
+  .rx-input:focus {
+    outline: none;
+    border-color: rgba(45, 212, 191, 0.35);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.08);
+  }
+
+  .rx-player-dock {
+    background: linear-gradient(180deg, rgba(22, 22, 24, 0.98) 0%, rgba(10, 10, 11, 1) 100%);
+    border-top: 1px solid var(--rx-border);
+  }
+
+  .rx-play-btn {
+    @apply w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200;
+    background: var(--rx-accent);
+    color: #042f2e;
+    box-shadow: 0 4px 18px rgba(45, 212, 191, 0.28);
+  }
+
+  .rx-play-btn[data-playing='true'] {
+    box-shadow: 0 0 20px var(--rx-accent-glow), 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .rx-play-btn:hover {
+    background: var(--rx-accent-hover);
+  }
+
+  .rx-transport-btn {
+    @apply p-2 rounded-lg transition-colors;
+    color: var(--rx-text-faint);
+  }
+
+  .rx-transport-btn:hover {
+    color: var(--rx-text-muted);
+    background: var(--rx-surface-hover);
+  }
+
+  .rx-row-active {
+    background: linear-gradient(90deg, var(--rx-accent-soft) 0%, transparent 100%);
+  }
+
+  .rx-art-thumb {
+    background: var(--rx-surface);
+  }
+
+  .rx-skeleton {
+    background: var(--rx-surface) !important;
+  }
+
+  .rx-empty-icon {
+    background: var(--rx-surface);
+    border: 1px solid var(--rx-border);
+  }
+
+  .rx-shelf {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .rx-shelf::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rx-station-card:active {
+    transform: scale(0.97);
+  }
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 12s linear infinite;
+}
+
+@keyframes wave-bar {
+  0%, 100% { height: 2px; opacity: 0.35; }
+  50% { height: 10px; opacity: 1; }
+}
+
+.animate-wave-bar {
+  animation: wave-bar 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-live-pulse,
+  .animate-wave-bar {
+    animation: none !important;
+  }
+}
+
+[data-slot='slider-track'] {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-slot='slider-range'] {
+  background: var(--rx-accent) !important;
+}
+
+[data-slot='slider-thumb'] {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid var(--rx-accent) !important;
+  background: #f4f4f5 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-slot='switch'] {
+  flex-shrink: 0;
+}
+
 ::-webkit-scrollbar {
   width: 4px;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Animations */
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-pulse-dot {
-  animation: pulse-dot 1.5s ease-in-out infinite;
-}
-
-/* Slider styling */
-[data-slot="slider-track"] {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-[data-slot="slider-range"] {
-  background: linear-gradient(90deg, #10b981, #06b6d4) !important;
-}
-
-[data-slot="slider-thumb"] {
-  width: 12px !important;
-  height: 12px !important;
-  border: 2px solid #10b981 !important;
-  background: white !important;
-}
-
-/* Tab styling */
-[data-state="active"][role="tab"] {
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.1) !important;
-}
-
-/* Input styling */
-input:focus {
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+/* Radix ScrollArea wraps content in display:table; min-width:100%.
+   Home shelves (~1350px max-content) otherwise widen the whole page
+   so 1fr tiles become ~440px. Force block so width + shelf scroll work. */
+[data-slot='scroll-area-viewport'] > div {
+  display: block !important;
+  min-width: 0 !important;
 }
