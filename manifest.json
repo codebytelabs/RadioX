@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RadioX - Global Internet Radio",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "Premium worldwide internet radio — curated collections, live charts, EQ, sleep timer, and now-playing track log. Ad-free.",
   "permissions": [
     "offscreen",

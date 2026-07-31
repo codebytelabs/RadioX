@@ -1,11 +1,11 @@
 {
   "name": "radiox",
   "private": true,
-  "version": "2.6.0",
+  "version": "2.6.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node node_modules/typescript/bin/tsc -b && node node_modules/vite/bin/vite.js build && cp manifest.json background.js offscreen.js dist/ && cp -r icons dist/",
+    "build": "node node_modules/typescript/bin/tsc -b && node node_modules/vite/bin/vite.js build && cp manifest.json background.js offscreen.js dist/ && mkdir -p dist/icons && cp icons/icon16.png icons/icon32.png icons/icon48.png icons/icon128.png icons/icon256.png dist/icons/",
     "lint": "eslint .",
     "preview": "vite preview"
   },

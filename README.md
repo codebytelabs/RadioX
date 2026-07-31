@@ -3,7 +3,7 @@
 Premium worldwide internet radio for Chromium — curated shelves, live charts, EQ, sleep timer, and a now-playing track log. Ad-free.
 
 **Publisher:** [Codebyte Labs](https://github.com/codebytelabs)  
-**Chrome Web Store:** [RadioX - Global Internet Radio](https://chromewebstore.google.com/detail/radiox-global-internet-radio/hjdegkfegpcmoaneeoccncofofjegmpn) *(pending review)*  
+**Chrome Web Store:** [RadioX - Global Internet Radio](https://chromewebstore.google.com/detail/radiox-global-internet-radio/hjdegkfegpcmoaneeoccncofofjegmpn)  
 **Landing:** [radiox-chrome.vercel.app](https://radiox-chrome.vercel.app)
 
 <p align="center">
